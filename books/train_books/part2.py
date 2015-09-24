@@ -1,10 +1,12 @@
 #######################
 # ALISHA SOJAR AND SHREYA SITARAMAN
+# Place file in training_books directory
+# cd to training_books directory
+# run python part2.py 
 #######################
 
 import re
 import os
-import sys
 import random
 import math
 import nltk
@@ -25,21 +27,24 @@ cum_bigram_prob = {} #culmulative bigram probability, 2D
 
 # Takes in an array of filenames
 # Return a list of tokens from this file
-def tokenizedText(files):
+def tokenizedText(files, directory):
+  tokens =[]
   for filename in files:
-    lines = open(filename, 'r').read()
-    sentences = re.compile(r'(?<=[.!?;])\s*').split(lines)
-    sentences_with_tag = '';
-    for sentence in sentences:
-      sentences_with_tag += ' START ' + sentence + ' END '
-  try:
-    tokens = word_tokenize(sentences_with_tag.decode('utf8'))    
-  except:
-    print filename, " did not tokenize"
+    if '.txt' in filename:
+      print "tokenizing ", filename
+      lines = open(directory + '/'+ filename, 'r').read()
+      sentences = re.compile(r'(?<=[.!?;])\s*').split(lines)
+      sentences_with_tag = '';
+      for sentence in sentences:
+        sentences_with_tag += ' START ' + sentence + ' END '
+      try:
+        tokens += word_tokenize(sentences_with_tag.decode('utf8'))    
+      except:
+        print filename, " did not tokenize"
   return tokens
 
-def getCounts(tokens):
-  return dict(Counter(tokens))
+# def getCounts(tokens):
+#   return dict(Counter(tokens))
 
 def unigram(tokens):
   for word in tokens:
@@ -74,7 +79,7 @@ def bigram(tokens):
     else:
         bigram_counts[bigram] = 1
 
-  #create 2 dimensional bigrams
+    #create 2 dimensional bigrams
     if prev_word in bigrams:
       if word in bigrams[prev_word]:
         bigrams[prev_word][word] += 1
@@ -117,22 +122,32 @@ def randomSentence(model):
     word_prob = cum_bigram_prob[prev_word]
 
   while (not 'END' in sentence) and (words < 50):
-            random_p = random.uniform(0,1)
-            added = False
-            for key,value in word_prob.items():
-                if value > random_p - 0.001 and value < random_p + 0.001 and not added and key != 'START':
-                    words += 1
-                    sentence += ' ' + key
-                    added = True
-                    prev_word = key
+    if model == 'bigram':
+      word_prob = cum_bigram_prob[prev_word]
+    random_p = random.uniform(0,1)
+    added = False
+    for key,value in word_prob.items():
+        if value > random_p - 0.001 and value < random_p + 0.001 and not added and key != 'START':
+            words += 1
+            sentence += ' ' + key
+            added = True
+            prev_word = key
   return sentence
 
 def main():
-  x = tokenizedText(['children/the_junior_classics_vol_1.txt', 'children/the_junior_classics_vol_4.txt'])
+
+  genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
+  files = os.listdir(os.getcwd()+ '/' + genre)
+  x = tokenizedText(files, os.getcwd()+'/'+genre)
   unigram(x)
   bigram(x)
-  print "Unigram sentence: ", randomSentence('unigram')
+
+  # print "Unigram sentence: "
+  # for i in range(1,15):
+  #   print randomSentence('unigram')
+
+  print "Bigram Sentences:"
   for i in range(1,15):
-    print "Bigram sentence: ", randomSentence('bigram')
+    print randomSentence('bigram')
 
 main()
