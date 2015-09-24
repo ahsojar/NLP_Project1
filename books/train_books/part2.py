@@ -23,6 +23,9 @@ bigrams = {} #2D bigram counts {word1: {word2: count, word3: count}, word2: {wor
 bigram_prob = {} #probability of each bigram, 2D
 cum_bigram_prob = {} #culmulative bigram probability, 2D
 
+add_one_uni = {} # dictionary of unigram probabilities with add-one smoothing
+add_one_bigram= {} #dictionary of bigram probabilities with add-one smoothing
+
 
 # Takes in an array of filenames
 # Return a list of tokens from this file
@@ -133,19 +136,48 @@ def randomSentence(model):
             prev_word = key
   return sentence
 
+
+def addOneSmoothingUnigram(unigram_counts, tokens):
+    len_corpus = len(tokens)
+    len_vocab = len(unigram_counts)
+    cum_prob = 0
+
+    add_one_smooth_uni = {}
+    for key,value in unigram_counts.items():
+        add_one_smooth_uni[key] = float(value + 1.0) / (len_vocab+len_corpus)  
+        cum_prob += add_one_smooth_uni[key] 
+    add_one_smooth_uni['UNKNOWN'] = 1-cum_prob
+    return add_one_smooth_uni
+
+def addOneSmoothingBigram(unigram_counts, bigram_counts):
+    vocab_length = len(unigram_counts)
+    cum_prob = 0
+
+    add_one_smooth_bi = {}
+    for key,value in bigram_counts.items():
+        #Add one in the numerator and add vocab_length in the denominator
+        add_one_smooth_bi[key] = float(value + 1.0) / (float(unigram_counts[key.split()[0]]) + vocab_length)
+        cum_prob += add_one_smooth_bi[key] 
+    add_one_smooth_bi['UNKNOWN'] = 1-cum_prob
+    return add_one_smooth_bi
+
 def main():
-  genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
-  files = os.listdir(os.getcwd()+ '/' + genre)
-  x = tokenizedText(files, os.getcwd()+'/'+genre)
-  unigram(x)
+  #genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
+  #files = os.listdir(os.getcwd()+ '/' + genre)
+  #x = tokenizedText(files, os.getcwd()+'/'+genre)
+  x = ["START", "this", "is", "my", "sample", "text", "END"]
+  print unigram(x)
+  print addOneSmoothingUnigram(unigram_counts, x)
   bigram(x)
+  print bigram_prob
+  print addOneSmoothingBigram(unigram_counts,bigram_counts)
 
   # print "Unigram sentence: "
   # for i in range(1,15):
   #   print randomSentence('unigram')
 
-  print "Bigram Sentences:"
-  for i in range(1,15):
-    print randomSentence('bigram')
+  # print "Bigram Sentences:"
+  # for i in range(1,15):
+  #   print randomSentence('bigram')
 
 main()
