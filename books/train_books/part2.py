@@ -10,6 +10,10 @@ import os
 import random
 import nltk
 import collections
+import sys
+
+reload(sys)
+sys.setdefaultencoding('UTF8')
 
 from collections import Counter
 from nltk.tokenize import word_tokenize
@@ -162,10 +166,10 @@ def addOneSmoothingBigram(unigram_counts, bigram_counts):
     return add_one_smooth_bi
 
 def main():
-  #genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
-  #files = os.listdir(os.getcwd()+ '/' + genre)
-  #x = tokenizedText(files, os.getcwd()+'/'+genre)
-  x = ["START", "this", "is", "my", "sample", "text", "END"]
+  genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
+  files = os.listdir(os.getcwd()+ '/' + genre)
+  x = tokenizedText(files, os.getcwd()+'/'+genre)
+  #x = ["START", "this", "is", "my", "sample", "text", "END"]
   print unigram(x)
   print addOneSmoothingUnigram(unigram_counts, x)
   bigram(x)
