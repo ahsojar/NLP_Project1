@@ -11,8 +11,10 @@ import sys
 import random
 import math
 import nltk
+import collections
 
 from nltk.tokenize import word_tokenize
+from collections import Counter
 
 unigrams = {} #{unigram: count, unigram2: count}
 unigram_prob = {} #{unigram: probability, unigram2: probability}
@@ -23,9 +25,8 @@ bigram_prob = {} #probability of each bigram  {bigram: probability, bigram2: pro
 cum_bigram_prob = {} #culmulative bigram probability
 
 
-
-
 def unigram(genre):
+  tokens = []
   word_count = 0
   # Open & read file
   for filename in os.listdir(os.getcwd()+ '/' + genre):
@@ -35,32 +36,36 @@ def unigram(genre):
       sentences_with_tag = '';
       
       for sentence in sentences:
-        sentences_with_tag += 'AAASTARTAAA '+sentence+' AAAENDAAA '
-      tokens = nltk.word_tokenize(sentences_with_tag.decode('utf8'))
-      word_count += len(tokens)
-      for word in tokens:
-        #Create unigram counts
-        if word in unigrams:
-          unigrams[word] += 1
-        else:
-          unigrams[word] = 1
+        sentences_with_tag += 'START '+ sentence +' END '
+      try:
+        tokens += nltk.word_tokenize(sentences_with_tag.decode('utf8'))
+      except:
+        print filename, " did not tokenize"
 
-    #Normalize unigram probabilities from 1 to 0
-    for k in unigrams:
-      unigram_prob[k] = unigrams[k]/float(word_count)
+  word_count = len(tokens)
+  
+  for word in tokens:
+      #Create unigram counts
+      if word in unigrams:
+        unigrams[word] += 1
+      else:
+        unigrams[word] = 1
 
-    total = 0
-    for k in unigrams:
-      total += unigram_prob[k]
-      cum_unigram_prob[k]=total
+  #Normalize unigram probabilities from 1 to 0
+  for k in unigrams:
+    unigram_prob[k] = unigrams[k]/float(word_count)
 
+  total = 0
+  for k in unigrams:
+    total += unigram_prob[k]
+    cum_unigram_prob[k]=total
+  
   return cum_unigram_prob
-
-
 
 def bigram(genre):
   # Open & read file
-  prev_word = "AAASTARTAAA"
+  prev_word = "START"
+  tokens = []
 
  # Open & read file
   for filename in os.listdir(os.getcwd()+ '/' + genre):
@@ -70,9 +75,14 @@ def bigram(genre):
       sentences_with_tag = '';
       
       for sentence in sentences:
-        sentences_with_tag += 'AAASTARTAAA '+sentence+' AAAENDAAA '
-      tokens = nltk.word_tokenize(sentences_with_tag.decode('utf8'))
-       
+        sentences_with_tag += 'START ' + sentence +' END '
+      
+      try:
+        tokens += nltk.word_tokenize(sentences_with_tag.decode('utf8'))
+      except:
+        print filename
+        pass
+      
       for word in tokens:
         #Create bigram counts
         if prev_word in bigrams:
@@ -85,12 +95,13 @@ def bigram(genre):
           bigrams[prev_word][word] = 1
         prev_word = word
 
+
   #normalize the bigram counts (divide by probability of first word)
   for first_word in bigrams:
     second_words = bigrams[first_word]
     normalized_words = {}
     for w in second_words:
-      if w != '<s>':
+      if w != 'START':
         normalized_words[w] = second_words[w]/ float(unigrams[first_word])
         bigram_prob[first_word] = normalized_words
 
@@ -106,34 +117,29 @@ def bigram(genre):
   return cum_bigram_prob
 
 
-def goodTuring(bigram):
-  
-
-
-
 def randomSentence(model):
-  sentence = 'AAASTARTAAA'
+  sentence = 'START'
   words = 1
   added = False
 
   if model == 'unigram':
-    while (not 'AAAENDAAA' in sentence) and (words < 30):
+    while (not 'END' in sentence) and (words < 30):
               random_p = random.uniform(0,1)
               added = False
               for key,value in cum_unigram_prob.items():
-                  if value > random_p - 0.001 and value < random_p + 0.001 and not added and key != 'AAASTARTAAA':
+                  if value > random_p - 0.001 and value < random_p + 0.001 and not added and key != 'START':
                       words += 1
                       sentence += ' ' + key
                       added = True
     return sentence
 
   if model == 'bigram':
-    prev_word = 'AAASTARTAAA'
-    while (not 'AAAENDAAA' in sentence) and (words < 30):
+    prev_word = 'START'
+    while (not 'END' in sentence) and (words < 50):
               random_p = random.uniform(0,1)
               added = False
               for key,value in cum_bigram_prob[prev_word].items():
-                  if value > random_p - 0.001 and value < random_p + 0.001 and not added and key != 'AAASTARTAAA':
+                  if value > random_p - 0.001 and value < random_p + 0.001 and not added and key != 'START':
                       words += 1
                       sentence += ' ' + key
                       added = True
@@ -144,12 +150,11 @@ def randomSentence(model):
 #Pass in genre argument when running python
 genre = sys.argv[1]
 unigram(genre)
-print bigram(genre)
-# bigram(genre)
+bigram(genre)
 
-# print "Unigram Random Sentence:"
-# for i in range(0,5):
-#   print randomSentence('unigram')
+print "Unigram Random Sentence:"
+for i in range(0,5):
+  print randomSentence('unigram')
 
 print "Bigram Random Sentence:"
 for i in range(0,5):
