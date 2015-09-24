@@ -8,7 +8,6 @@
 import re
 import os
 import random
-import math
 import nltk
 import collections
 
@@ -135,7 +134,6 @@ def randomSentence(model):
   return sentence
 
 def main():
-
   genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
   files = os.listdir(os.getcwd()+ '/' + genre)
   x = tokenizedText(files, os.getcwd()+'/'+genre)
