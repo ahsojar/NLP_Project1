@@ -21,17 +21,9 @@ from nltk.tokenize import word_tokenize
 
 ####################################
 
-'''
-Computes the unigram model given a set of tokens.
 
-Params:
-tokens: array of tokens in text
-
-Returns:
-result[0] is dicionary of unigram word counts
-result[2] is dictionary of the unigram probabilities
-'''
 def unigram(tokens):
+
   unigram_counts = {} 
   unigram_prob = {} 
 
@@ -149,7 +141,7 @@ ngram counts: dictionary of ngram counts
 Returns:
 dictionary of Good Turing ngram probabilities
 '''
-def goodTuringSmoothing(ngram_counts):
+def goodTuringSmoothing(model, ngram_counts, ngram_prob):
   freq_counts= Counter(ngram_counts.values()).most_common()
   freq_counts = dict(freq_counts)
   unk_prob = 0.0
@@ -158,15 +150,23 @@ def goodTuringSmoothing(ngram_counts):
   x = 1
 
   for key, value in ngram_counts.items():
-    if value <= 1:
       unk_prob = float(float(freq_counts[1])/float(length))
-    if value >= 1 and value <= 5:
-      if value+1 in freq_counts:
-        num = float(value + 1) * (float(freq_counts[value+1])/float(freq_counts[value]))
-        goodTuring[key] = float(num/float(length))
-      else:
-        num = float(value + 1) * (0)/float(freq_counts[value])
-        goodTuring[key] = float(num/float(length))
+      if value >= 1 and value <= 5:
+        if value+1 in freq_counts:
+          num = float(value + 1) * (float(freq_counts[value+1])/float(freq_counts[value]))
+          new_prob = float(num/float(length))
+          goodTuring[key] = new_prob
+        else:
+          num = float(value + 1) * (0)/float(freq_counts[value])
+          new_prob = float(num/float(length))
+          goodTuring[key] = new_prob
+
+      if value > 5:
+        if model == 'unigram':
+          new_prob = ngram_prob[key]
+          goodTuring[key] = new_prob
+        elif model == 'bigram':
+          new_prob ==  ngram_prob[key.split()[0]][key.split()[1]]
   goodTuring['<UNK>']= unk_prob
 
   return goodTuring
@@ -179,22 +179,55 @@ Computes perpelxity for a test set against a training set unigram probability mo
 Params:
 unigram_prob: dictionary of unigram probibilities
 tokens: tokens in test set
+goodTuring_uni: 
 
 Returns:
 float, perplexity value
 '''
-def perplexityUnigrams(unigram_prob, tokens):
+def perplexityUnigrams(unigram_prob, tokens, goodTuring_uni):
   total = 0
   word_count = len(tokens)
-  prev_word=tokens[0]
 
   for w in tokens:
     if w in unigram_prob:
       x = -math.log(unigram_prob[w])
       total = total + x
     else:
-      x = -math.log(unigram_prob['<UNK>'])
+      x = -math.log(goodTuring_uni['<UNK>'])
       total = total + x
+  
+  perplexity = total/float(word_count)
+  return perplexity
+
+####################################
+
+'''
+Computes perplexity for a test set against a training set bigram probability model.
+
+Params:
+bigram_prob: dictionary of bigram probibilities
+tokens: tokens in test set
+goodTuring_bi:
+
+Returns:
+float, perplexity value
+'''
+def perplexityBigrams(bigram_prob, tokens, goodTuring_bi):
+  total = 0
+  word_count = len(tokens)
+  prev_word = tokens[0]
+  not_first_word = False
+
+  for word in tokens:
+    if not_first_word:
+      if word in bigram_prob:
+        x = -math.log(bigram_prob[prev_word][word])
+        total = total + x
+        
+      else:
+        x = -math.log(goodTuring_bi['<UNK>'])
+        total = total + x
+    not_first_word = True
   
   perplexity = total/float(word_count)
   return perplexity
@@ -298,8 +331,8 @@ def genreClassifier(test_tokens, genre_models):
 
 def trainModel(genre):
   files = os.listdir(os.getcwd()+ '/train_books/' + genre)
-  #x = tokenizedText(files, os.getcwd()+'/train_books/'+genre)
-  x = ["START", "this", "is", 'this', 'is', "my", "sample", "text", "END"]
+  x = tokenizedText(files, os.getcwd()+'/train_books/'+genre)
+  #x = ["START", "this", "is", 'this', 'is', "my", "sample", "text", "END"]
   unigrams = unigram(x)
   unigram_counts = unigrams[0]
   unigram_prob = unigrams[1]
@@ -310,13 +343,13 @@ def trainModel(genre):
   add_one = addOneSmoothingUnigram(unigram_counts, x)
   add_one_bi = addOneSmoothingBigram(unigram_counts,bigrams_2d)
   
-  goodTuring_uni = goodTuringSmoothing(unigram_counts)
-  goodTuring_bi = goodTuringSmoothing(bigram_counts)
+  goodTuring_uni = goodTuringSmoothing('unigram', unigram_counts, unigram_prob)
+  goodTuring_bi = goodTuringSmoothing('bigram', bigram_counts, bigrams_2d)
+  
+  #print goodTuring_bi
 
-  print goodTuring_uni
-  print goodTuring_bi
-
-  # #print perplexityUnigrams(add_one, ['START', 'Alisha', 'is'] )
+  #print perplexityUnigrams(unigram_prob, ['START', 'Alisha', 'is'], goodTuring_uni)
+  print perplexityBigrams(bigram_prob, ['START', 'Alisha', 'is'], goodTuring_bi)
   # print "UNIGRAM"
   # for i in range(1,10):
   #   print randomSentence('unigram', unigram_prob)
@@ -391,7 +424,8 @@ def main():
   # bigram_counts = bigrams[0]
   # bigrams_2d = bigrams[1]
   # bigram_prob = bigrams[2]
-
+ 
+  #perplexityUnigrams(unigram_counts, tokens)
   # print bigram_counts
   # print bigrams_2d
   # print bigram_prob
