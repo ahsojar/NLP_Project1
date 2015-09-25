@@ -15,23 +15,22 @@ import math
 
 reload(sys)
 sys.setdefaultencoding('UTF8')
-
 from collections import Counter
 from nltk.tokenize import word_tokenize
 
 ####################################
 
-'''
-Computes the unigram model given a set of tokens.
-
-Params:
-tokens: array of tokens in text
-
-Returns:
-result[0] is dicionary of unigram word counts
-result[2] is dictionary of the unigram probabilities
-'''
 def unigram(tokens):
+  """
+  Computes the unigram model given a set of tokens.
+
+  Params:
+  tokens: array of tokens in text
+
+  Returns:
+  result[0] is dicionary of unigram word counts
+  result[2] is dictionary of the unigram probabilities
+  """
   unigram_counts = {} 
   unigram_prob = {} 
 
@@ -51,19 +50,19 @@ def unigram(tokens):
 
 ####################################
 
-'''
-Computes the bigram model given a set of tokens.
-
-Params:
-tokens: array of tokens in text
-unigram_counts: dictionary of wordcounts of these tokens
-
-Returns:
-result[0] as the bigram counts
-result[1] as the bigram counts two dimesnional
-result[2] as the bigram probabilities
-'''
 def bigram(tokens, unigram_counts):
+  """
+  Computes the bigram model given a set of tokens.
+
+  Params:
+  tokens: array of tokens in text
+  unigram_counts: dictionary of wordcounts of these tokens
+
+  Returns:
+  result[0] as the bigram counts
+  result[1] as the bigram counts two dimesnional
+  result[2] as the bigram probabilities
+  """
   bigram_counts = {} #{'word1 word2': count, 'word2 word3': count}
   bigrams_2d = {} #2D bigram counts {word1: {word2: count, word3: count}, word2: {word4: count}}
   bigram_prob = {} #probability of each bigram, 2D
@@ -102,23 +101,23 @@ def bigram(tokens, unigram_counts):
 
 ####################################
 
-'''
-Generates a random sentence given a probability model of words.
-
-Params:
-model: pass in string 'unigram' or 'bigram' to indicate type of model
-probabilties: dictionary of probabilties
-
-Returns:
-a string random sentence
-'''
 def randomSentence(model, probabilities):
+  """
+  Generates a random sentence given a probability model of words.
+
+  Params:
+  model: pass in string 'unigram' or 'bigram' to indicate type of model
+  probabilties: dictionary of probabilties
+
+  Returns:
+  a string random sentence
+  """
   cum_prob = cumulativeProb(model, probabilities)
   
   words = 1
   added = False
-  prev_word = 'been'
-  sentence = 'START Professor Claire Cardie is'
+  prev_word = 'START'
+  sentence = 'START'
   if model == 'unigram':
     word_prob = cum_prob
   elif model == 'bigram':
@@ -137,19 +136,18 @@ def randomSentence(model, probabilities):
             prev_word = key
   return sentence
 
-
 ####################################
 
-'''
-Recomputes ngram probabilities using Good Turing smoothing.
+def goodTuringSmoothing(model, ngram_counts, ngram_prob):
+  """
+  Recomputes ngram probabilities using Good Turing smoothing.
 
-Params:
-ngram counts: dictionary of ngram counts
+  Params:
+  ngram counts: dictionary of ngram counts
 
-Returns:
-dictionary of Good Turing ngram probabilities
-'''
-def goodTuringSmoothing(ngram_counts):
+  Returns:
+  dictionary of Good Turing ngram probabilities
+  """
   freq_counts= Counter(ngram_counts.values()).most_common()
   freq_counts = dict(freq_counts)
   unk_prob = 0.0
@@ -158,35 +156,43 @@ def goodTuringSmoothing(ngram_counts):
   x = 1
 
   for key, value in ngram_counts.items():
-    if value <= 1:
       unk_prob = float(float(freq_counts[1])/float(length))
-    if value >= 1 and value <= 5:
-      if value+1 in freq_counts:
-        num = float(value + 1) * (float(freq_counts[value+1])/float(freq_counts[value]))
-        goodTuring[key] = float(num/float(length))
-      else:
-        num = float(value + 1) * (0)/float(freq_counts[value])
-        goodTuring[key] = float(num/float(length))
+      if value >= 1 and value <= 5:
+        if value+1 in freq_counts:
+          num = float(value + 1) * (float(freq_counts[value+1])/float(freq_counts[value]))
+          new_prob = float(num/float(length))
+          goodTuring[key] = new_prob
+        else:
+          num = float(value + 1) * (0)/float(freq_counts[value])
+          new_prob = float(num/float(length))
+          goodTuring[key] = new_prob
+
+      if value > 5:
+        if model == 'unigram':
+          new_prob = ngram_prob[key]
+          goodTuring[key] = new_prob
+        elif model == 'bigram':
+          new_prob ==  ngram_prob[key.split()[0]][key.split()[1]]
   goodTuring['<UNK>']= unk_prob
 
   return goodTuring
 
 ####################################
 
-'''
-Computes perpelxity for a test set against a training set unigram probability model.
-
-Params:
-unigram_prob: dictionary of unigram probibilities
-tokens: tokens in test set
-
-Returns:
-float, perplexity value
-'''
 def perplexityUnigrams(unigram_prob, tokens):
+  """
+  Computes perpelxity for a test set against a training set unigram probability model.
+
+  Params:
+  unigram_prob: dictionary of unigram probibilities
+  tokens: tokens in test set
+  goodTuring_uni: 
+
+  Returns:
+  float, perplexity value
+  """
   total = 0
   word_count = len(tokens)
-  prev_word=tokens[0]
 
   for w in tokens:
     if w in unigram_prob:
@@ -201,17 +207,50 @@ def perplexityUnigrams(unigram_prob, tokens):
 
 ####################################
 
-'''
-Computes the unigram model given a set of tokens
-Uses add-one smoothing, so also handles case of unknown words.
+def perplexityBigrams(bigram_prob, tokens):
+  """
+  Computes perplexity for a test set against a training set bigram probability model.
 
-Params:
-unigram counts: dictionary of unigram counts
+  Params:
+  bigram_prob: dictionary of bigram probibilities
+  tokens: tokens in test set
+  goodTuring_bi:
 
-Returns:
-dictionary of add-one smoothing unigram probabilities
-'''
+  Returns:
+  float, perplexity value
+  """
+  total = 0
+  word_count = len(tokens)
+  prev_word = tokens[0]
+  not_first_word = False
+
+  for word in tokens:
+    if not_first_word:
+      if word in bigram_prob:
+        x = -math.log(bigram_prob[prev_word][word])
+        total = total + x
+        
+      else:
+        x = -math.log(bigram_prob['<UNK>'])
+        total = total + x
+    not_first_word = True
+  
+  perplexity = total/float(word_count)
+  return perplexity
+
+####################################
+
 def addOneSmoothingUnigram(unigram_counts, tokens):
+  """
+  Computes the unigram model given a set of tokens
+  Uses add-one smoothing, so also handles case of unknown words.
+
+  Params:
+  unigram counts: dictionary of unigram counts
+
+  Returns:
+  dictionary of add-one smoothing unigram probabilities
+  """
   len_corpus = len(tokens)
   len_vocab = len(unigram_counts)
   cum_prob = 0
@@ -225,16 +264,16 @@ def addOneSmoothingUnigram(unigram_counts, tokens):
 
 ####################################
 
-'''
-Computes the bigram model with add-one smoothing, which can now handle unseen bigrams.
-
-Params:
-unigram counts: dictionary of unigram counts for these tokens
-
-Returns:
-dictionary of Good Turing unigram probabilities
-'''
 def addOneSmoothingBigram(unigram_counts, bigrams):
+  """
+  Computes the bigram model with add-one smoothing, which can now handle unseen bigrams.
+
+  Params:
+  unigram counts: dictionary of unigram counts for these tokens
+
+  Returns:
+  dictionary of Good Turing unigram probabilities
+  """
   vocab_length = len(unigram_counts)
   add_one_smooth_bi = bigrams
   for first_word in add_one_smooth_bi:
@@ -245,40 +284,23 @@ def addOneSmoothingBigram(unigram_counts, bigrams):
       add_one_smooth_bi[first_word]['<UNK>'] = 1-cum_prob
   return add_one_smooth_bi
 
-####################################
-
-'''
-Given a genre, this function will find all test books of this genre, 
-and run them through the classifier to see if they are accurately identified
-
-Params: 'children', 'history', or 'crime'
-Returns: classifications, rate
-'''
-def genreClassification(true_genre):
-  genre_models ={}
-  for genre in ['children', 'history', 'crime']:
-    genre_models[genre] = trainModel(genre)
-  files = os.listdir(os.getcwd()+ '/test_books/' + true_genre)
-
-  for f in files:
-    test_tokens = tokenizedText([f], os.getcwd()+'/test_books/'+ true_genre)
-    print genreClassifier(test_tokens, genre_models)
-
 
 ####################################
-
-'''
-Given a list of tokens, will classify which genre these tokens will most likely appear in.
-
-Params: 
-test_tokens, or list of tokens from test file
-genre_models, a list of probability models from each genre we are looking at
-Returns: classification in form of string
-'''
 
 def genreClassifier(test_tokens, genre_models):
+  
+  """
+  Given a list of tokens, will classify which genre these tokens will most likely appear in.
+
+  Params: 
+  test_tokens, or list of tokens from test file
+  genre_models, a list of probability models from each genre we are looking at
+  Returns: classification in form of string
+  """
   tokens = test_tokens
-  most_common = dict(Counter(test_tokens).most_common())
+  most_common = Counter(test_tokens).most_common()
+  top100 = [x[0] for x in most_common]
+  top100 = top100[:100]
 
   models = {
   'children': genre_models['children']['addone_uni'], 
@@ -287,19 +309,81 @@ def genreClassifier(test_tokens, genre_models):
   }
 
   probs = {'children':1, 'history': 1, 'crime': 1}
-  for word, count in most_common.items():
+  for word in top100:
     for genre in probs:
-      probs[genre] *= genre_models[genre][word]
-  return probs
+      if word in models[genre]:
+        probs[genre] *= models[genre][word]
+  print probs
+  return max(probs, key=probs.get)
 
 ###################################
 # HELPER FUNCTIONS 
 ###################################
 
+def runSentenceGenerator(genre):
+  model = trainModel(genre)
+
+  print "UNIGRAM sentences"
+  for i in range(1,10):
+    print randomSentence('unigram', model['unigram'])
+
+  print "BIGRAM sentences"
+  for i in range(1,10):
+    print randomSentence('bigram', model['bigram'])
+
+####################################
+
+def runPerplexity(test_genre):
+  genre_models ={}
+  genres = ['children', 'history', 'crime']
+  
+  for genre in genres:
+    genre_models[genre] = trainModel(genre)
+  
+  #get test files for this genre
+  files = os.listdir(os.getcwd()+ '/test_books/' + test_genre)
+  for f in files:
+    if ".txt" in f:
+      for g in genres:
+        test_tokens = tokenizedText([f], os.getcwd()+'/test_books/'+ test_genre)
+        print "Perplexity for " + f + " against " + g +" good turning unigram model:"
+        print perplexityUnigrams(genre_models[g]['good_turing_uni'], test_tokens)
+
+        print "Perplexity for " + f + " against " + g +" good turning bigram model:"
+        print perplexityBigrams(genre_models[g]['good_turing_bi'], test_tokens)
+
+
+####################################
+
+def runGenreClassification():
+  """
+  Given a genre, this function will find all test books of this genre, 
+  and run them through the classifier to see if they are accurately identified
+
+  Params: 'children', 'history', or 'crime'
+  Returns: classifications, rate
+  """
+  genres = ['children', 'history', 'crime']
+
+  genre_models ={}
+  for genre in genres:
+    genre_models[genre] = trainModel(genre)
+  
+  for true_genre in genres:
+    files = os.listdir(os.getcwd()+ '/test_books/' + true_genre)
+    for f in files:
+      if '.txt' in f:
+        print "Genre classification for " + f + ":"
+        test_tokens = tokenizedText([f], os.getcwd()+'/test_books/'+ true_genre)
+        print "Classification is: " + genreClassifier(test_tokens, genre_models)
+    
+####################################
+
 def trainModel(genre):
+  print "Training on " + genre + " corpus..."
   files = os.listdir(os.getcwd()+ '/train_books/' + genre)
-  #x = tokenizedText(files, os.getcwd()+'/train_books/'+genre)
-  x = ["START", "this", "is", 'this', 'is', "my", "sample", "text", "END"]
+  x = tokenizedText(files, os.getcwd()+'/train_books/'+genre)
+  #x= ["START", "this", "is", 'this', 'is', "my", "sample", "text", "END"]
   unigrams = unigram(x)
   unigram_counts = unigrams[0]
   unigram_prob = unigrams[1]
@@ -309,37 +393,31 @@ def trainModel(genre):
   bigram_prob = bigrams[2]
   add_one = addOneSmoothingUnigram(unigram_counts, x)
   add_one_bi = addOneSmoothingBigram(unigram_counts,bigrams_2d)
+  good_turing_uni = goodTuringSmoothing('unigram', unigram_counts, unigram_prob)
+  good_turing_bi = goodTuringSmoothing('bigram', bigram_counts, bigrams_2d)
   
-  goodTuring_uni = goodTuringSmoothing(unigram_counts)
-  goodTuring_bi = goodTuringSmoothing(bigram_counts)
-
-  print goodTuring_uni
-  print goodTuring_bi
-
-  # #print perplexityUnigrams(add_one, ['START', 'Alisha', 'is'] )
-  # print "UNIGRAM"
-  # for i in range(1,10):
-  #   print randomSentence('unigram', unigram_prob)
-
-  # print "BIGRAM"
-  # for i in range(1,10):
-  #   print randomSentence('bigram', bigram_prob)
-  
-  return {"unigram": unigram_prob, "bigram": bigram_prob, "addone_uni": add_one, "addone_bi": add_one_bi}
+  return {
+    "unigram": unigram_prob, 
+    "bigram": bigram_prob, 
+    "addone_uni": add_one, 
+    "addone_bi": add_one_bi,
+    "good_turing_uni":good_turing_uni,
+    "good_turing_bi": good_turing_bi
+  }
 
 ####################################
 
-'''
-Reads a list of textfiles and returns all tokens from the text.
-
-Params: 
-files: array of textfile names to go through
-directory: string indicating where the files live relative to main.py
-
-Returns:
-Array of tokens (non-unique)
-'''
 def tokenizedText(files, directory):
+  """
+  Reads a list of textfiles and returns all tokens from the text.
+
+  Params: 
+  files: array of textfile names to go through
+  directory: string indicating where the files live relative to main.py
+
+  Returns:
+  Array of tokens (non-unique)
+  """
   tokens =[]
   for filename in files:
     if '.txt' in filename:
@@ -352,16 +430,16 @@ def tokenizedText(files, directory):
       try:
         tokens += word_tokenize(sentences_with_tag.decode('utf8'))    
       except:
-        print filename, " did not tokenize"
+        print filename, " skipped"
   return tokens
 
 ####################################
 
-'''
-Given a model type and probabilities, will calculate the cumulative probabilities. 
-Needed for randomly sampling the model for random sentence generation
-'''
 def cumulativeProb(model, probabilities):
+  """
+  Given a model type and probabilities, will calculate the cumulative probabilities. 
+  Needed for randomly sampling the model for random sentence generation
+  """
   cum_prob ={}
   if model == 'unigram':
     total = 0
@@ -380,24 +458,30 @@ def cumulativeProb(model, probabilities):
       cum_prob[first_word] = cum_second_words
   return cum_prob
 
+####################################
+
 def main():
   #genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
-  #genreClassification ('history')
- 
-  # unigrams = unigram(t)
-  # unigram_counts = unigrams[0]
-  # unigram_prob = unigrams[1]
-  # bigrams = bigram(t, unigram_counts)
-  # bigram_counts = bigrams[0]
-  # bigrams_2d = bigrams[1]
-  # bigram_prob = bigrams[2]
+  #genreClassification ('children')
+  demo = -1
+  while int(demo) != 0:
+    print('Choose one of the Following Demos: ')
+    print('1 - Random Sentence Generation')
+    print('2 - Measure Perplexity')
+    print('3 - Genre Classification')
+    print('0 - Exit')
+    print('')
 
-  # print bigram_counts
-  # print bigrams_2d
-  # print bigram_prob
-  
-  trainModel('history')
-  #genreClassifier(t, {})
+    demo = input('Enter input here: ')
+    if int(demo) == 1:
+      genre = raw_input('Choose a genre to train on: history, children or crime: ')
+      runSentenceGenerator(genre)
+        
+    elif int(demo) == 2:
+      test_genre = raw_input('Choose the genre of the test_book files we want to compute perplexity for: (history, children or crime): ')
+      runPerplexity(test_genre)
 
-
+    elif int(demo) == 3:
+      runGenreClassification()
+          
 main()
