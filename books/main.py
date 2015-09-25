@@ -303,9 +303,9 @@ def genreClassifier(test_tokens, genre_models):
   top100 = top100[:100]
 
   models = {
-  'children': genre_models['children']['addone_uni'], 
-  'history': genre_models['history']['addone_uni'], 
-  'crime': genre_models['crime']['addone_uni']
+  'children': genre_models['children']['good_turing_uni'], 
+  'history': genre_models['history']['good_turing_uni'], 
+  'crime': genre_models['crime']['good_turing_uni']
   }
 
   probs = {'children':1, 'history': 1, 'crime': 1}
@@ -346,10 +346,10 @@ def runPerplexity(test_genre):
     if ".txt" in f:
       for g in genres:
         test_tokens = tokenizedText([f], os.getcwd()+'/test_books/'+ test_genre)
-        print "Perplexity for " + f + " against " + g +" good turning unigram model:"
+        print "Perplexity for " + f + " against " + g +" good turing unigram model:"
         print perplexityUnigrams(genre_models[g]['good_turing_uni'], test_tokens)
 
-        print "Perplexity for " + f + " against " + g +" good turning bigram model:"
+        print "Perplexity for " + f + " against " + g +" good turing bigram model:"
         print perplexityBigrams(genre_models[g]['good_turing_bi'], test_tokens)
 
 
@@ -383,7 +383,6 @@ def trainModel(genre):
   print "Training on " + genre + " corpus..."
   files = os.listdir(os.getcwd()+ '/train_books/' + genre)
   x = tokenizedText(files, os.getcwd()+'/train_books/'+genre)
-  #x= ["START", "this", "is", 'this', 'is', "my", "sample", "text", "END"]
   unigrams = unigram(x)
   unigram_counts = unigrams[0]
   unigram_prob = unigrams[1]
@@ -391,7 +390,7 @@ def trainModel(genre):
   bigram_counts = bigrams[0]
   bigrams_2d = bigrams[1]
   bigram_prob = bigrams[2]
-  add_one = addOneSmoothingUnigram(unigram_counts, x)
+  add_one_uni = addOneSmoothingUnigram(unigram_counts, x)
   add_one_bi = addOneSmoothingBigram(unigram_counts,bigrams_2d)
   good_turing_uni = goodTuringSmoothing('unigram', unigram_counts, unigram_prob)
   good_turing_bi = goodTuringSmoothing('bigram', bigram_counts, bigrams_2d)
@@ -399,7 +398,7 @@ def trainModel(genre):
   return {
     "unigram": unigram_prob, 
     "bigram": bigram_prob, 
-    "addone_uni": add_one, 
+    "addone_uni": add_one_uni, 
     "addone_bi": add_one_bi,
     "good_turing_uni":good_turing_uni,
     "good_turing_bi": good_turing_bi
@@ -421,7 +420,6 @@ def tokenizedText(files, directory):
   tokens =[]
   for filename in files:
     if '.txt' in filename:
-      print "tokenizing ", filename
       lines = open(directory + '/'+ filename, 'r').read()
       sentences = re.compile(r'(?<=[.!?;])\s*').split(lines)
       sentences_with_tag = '';
@@ -430,7 +428,7 @@ def tokenizedText(files, directory):
       try:
         tokens += word_tokenize(sentences_with_tag.decode('utf8'))    
       except:
-        print filename, " skipped"
+        pass
   return tokens
 
 ####################################
@@ -461,8 +459,6 @@ def cumulativeProb(model, probabilities):
 ####################################
 
 def main():
-  #genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
-  #genreClassification ('children')
   demo = -1
   while int(demo) != 0:
     print('Choose one of the Following Demos: ')
