@@ -166,6 +166,16 @@ def goodTuringSmoothing(ngram_counts):
   return goodTuring
 
 
+'''
+Computes perpelxity for a test set against a training set unigram probability model.
+
+Params:
+unigram_prob: dictionary of unigram probibilities
+tokens: tokens in test set
+
+Returns:
+float, perplexity value
+'''
 def perplexityUnigrams(unigram_prob, tokens):
   total = 0
   word_count = len(tokens)
@@ -299,7 +309,6 @@ def trainModel(genre):
   return {"unigram": unigram_prob, "bigram": bigram_prob, "addone_uni": add_one, "addone_bi": add_one_bi}
 
 ###### HELPER FUNCTIONS 
-
 '''
 Reads a list of textfiles and returns all tokens from the text.
 
