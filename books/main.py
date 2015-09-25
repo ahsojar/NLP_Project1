@@ -110,7 +110,7 @@ def randomSentence(model, probabilities):
   probabilties: dictionary of probabilties
 
   Returns:
-  a string random sentence
+  a string, the random sentence
   """
   cum_prob = cumulativeProb(model, probabilities)
   
@@ -143,7 +143,9 @@ def goodTuringSmoothing(model, ngram_counts, ngram_prob):
   Recomputes ngram probabilities using Good Turing smoothing.
 
   Params:
-  ngram counts: dictionary of ngram counts
+  model: pass in string 'unigram' or 'bigram' to indicate type of model
+  ngram_counts: dictionary of ngram counts
+  ngram_prob: dictionary of ngram probabilities
 
   Returns:
   dictionary of Good Turing ngram probabilities
@@ -186,7 +188,6 @@ def perplexityUnigrams(unigram_prob, tokens):
   Params:
   unigram_prob: dictionary of unigram probibilities
   tokens: tokens in test set
-  goodTuring_uni: 
 
   Returns:
   float, perplexity value
@@ -214,7 +215,6 @@ def perplexityBigrams(bigram_prob, tokens):
   Params:
   bigram_prob: dictionary of bigram probibilities
   tokens: tokens in test set
-  goodTuring_bi:
 
   Returns:
   float, perplexity value
@@ -247,6 +247,7 @@ def addOneSmoothingUnigram(unigram_counts, tokens):
 
   Params:
   unigram counts: dictionary of unigram counts
+  tokens: list of tokens in training set
 
   Returns:
   dictionary of add-one smoothing unigram probabilities
@@ -270,9 +271,10 @@ def addOneSmoothingBigram(unigram_counts, bigrams):
 
   Params:
   unigram counts: dictionary of unigram counts for these tokens
+  bigrams: dictionary of bigram counts in training set
 
   Returns:
-  dictionary of Good Turing unigram probabilities
+  dictionary of add-one smoothing bigram probabilities
   """
   vocab_length = len(unigram_counts)
   add_one_smooth_bi = bigrams
@@ -295,6 +297,7 @@ def genreClassifier(test_tokens, genre_models):
   Params: 
   test_tokens, or list of tokens from test file
   genre_models, a list of probability models from each genre we are looking at
+
   Returns: classification in form of string
   """
   tokens = test_tokens
@@ -319,8 +322,16 @@ def genreClassifier(test_tokens, genre_models):
 ###################################
 # HELPER FUNCTIONS 
 ###################################
+  
 
 def runSentenceGenerator(genre):
+  """
+  Runs the random sentence generator on the corpus of the genre given.
+
+  Params: 
+  genre: string; either 'history', 'children', or 'crime'
+  
+  """
   model = trainModel(genre)
 
   print "UNIGRAM sentences"
@@ -334,6 +345,13 @@ def runSentenceGenerator(genre):
 ####################################
 
 def runPerplexity(test_genre):
+  """
+  Runs the perplexity demo (both unigram and bigram) on all test files of genre given. 
+  Uses good-turing smoothing.
+
+  Params: 
+  test_genre: string; either 'history', 'children', or 'crime'
+  """
   genre_models ={}
   genres = ['children', 'history', 'crime']
   
@@ -360,8 +378,9 @@ def runGenreClassification():
   Given a genre, this function will find all test books of this genre, 
   and run them through the classifier to see if they are accurately identified
 
-  Params: 'children', 'history', or 'crime'
-  Returns: classifications, rate
+  Params: none
+
+  Returns: classifications, probabilities
   """
   genres = ['children', 'history', 'crime']
 
@@ -380,6 +399,23 @@ def runGenreClassification():
 ####################################
 
 def trainModel(genre):
+  """
+  Given a genre, this will look at all the training files in that specific corpus.
+  It will then create both unigram and bigram models, and also run the different smoothing techniques.
+
+  Params: 
+  genre: string, 'children', 'history', or 'crime'. Defines the corpus for this model
+  
+  Return:
+  A dictionary of the different types of probability models:
+    "unigram": unigram model, unsmoothed
+    "bigram": bigram model, unsmoothed
+    "addone_uni": unigram model, add-one smoothing
+    "addone_bi": bigram model, add-one smoothing
+    "good_turing_uni":  unigram model, good turing smoothing
+    "good_turing_bi": bigram model, good turing smoothing 
+  """
+
   print "Training on " + genre + " corpus..."
   files = os.listdir(os.getcwd()+ '/train_books/' + genre)
   x = tokenizedText(files, os.getcwd()+'/train_books/'+genre)
@@ -459,6 +495,9 @@ def cumulativeProb(model, probabilities):
 ####################################
 
 def main():
+  """
+  Main method to run demos
+  """
   demo = -1
   while int(demo) != 0:
     print('Choose one of the Following Demos: ')
