@@ -116,14 +116,14 @@ def randomSentence(model, probabilities):
   
   words = 1
   added = False
-  prev_word = 'START'
-  sentence = 'START'
+  prev_word = 'been'
+  sentence = 'START Professor Claire Cardie is'
   if model == 'unigram':
     word_prob = cum_prob
   elif model == 'bigram':
     word_prob = cum_prob[prev_word]
 
-  while (not 'END' in sentence) and (words < 50):
+  while (not 'END' in sentence) and (words < 30):
     if model == 'bigram':
       word_prob = cum_prob[prev_word]
     random_p = random.uniform(0,1)
@@ -188,6 +188,20 @@ def addOneSmoothingBigram(unigram_counts, bigrams):
       add_one_smooth_bi[first_word]['<UNK>'] = 1-cum_prob
   return add_one_smooth_bi
 
+def genreClassification(true_genre):
+  genre_models ={}
+  # for genre in ['children', 'history', 'crime']:
+  #   genre_models[genre] = trainModel(genre)
+  
+  files = os.listdir(os.getcwd()+ '/test_books/' + true_genre)
+
+  for f in files:
+    try:
+      test_tokens = tokenizedText([f], os.getcwd()+'/test_books/'+ true_genre)
+      print genreClassifier(test_tokens, genre_models)
+    except:
+      print "couldn't tokenize"
+
 def genreClassifier(test_tokens, genre_models):
   tokens = test_tokens
   models = {
@@ -216,39 +230,35 @@ def trainModel(genre):
   add_one = addOneSmoothingUnigram(unigram_counts, x)
   add_one_bi = addOneSmoothingBigram(unigram_counts,bigrams_2d)
 
-  print perplexityUnigrams(add_one, ['START', 'Alisha', 'is'] )
-  print randomSentence('bigram', bigram_prob)
+  #print perplexityUnigrams(add_one, ['START', 'Alisha', 'is'] )
+  print "UNIGRAM"
+  for i in range(1,10):
+    print randomSentence('unigram', unigram_prob)
+
+  print "BIGRAM"
+  for i in range(1,10):
+    print randomSentence('bigram', bigram_prob)
+  
   return {"unigram": unigram_prob, "bigram": bigram_prob, "addone_uni": add_one, "addone_bi": add_one_bi}
 
-def genreClassification(true_genre):
-  genre_models ={}
-  for genre in ['children', 'history', 'crime']:
-    genre_models[genre] = trainModel(genre)
-  
-  files = os.listdir(os.getcwd()+ '/test_books/' + true_genre)
 
-  for f in files:
-    try:
-      test_tokens = tokenizedText([f], os.getcwd()+'/test_books/'+ true_genre)
-      print genreClassifier(test_tokens, genre_models)
-    except:
-      print "couldn't tokenize"
 
 def main():
   #genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
   #genreClassification ('children')
-  t= ['START', 'hi', 'bye', 'hi', 'bye', 'END']
-  unigrams = unigram(t)
-  unigram_counts = unigrams[0]
-  unigram_prob = unigrams[1]
-  bigrams = bigram(t, unigram_counts)
-  bigram_counts = bigrams[0]
-  bigrams_2d = bigrams[1]
-  bigram_prob = bigrams[2]
+  # t= ['START', 'hi', 'bye', 'hi', 'bye', 'END']
+  # unigrams = unigram(t)
+  # unigram_counts = unigrams[0]
+  # unigram_prob = unigrams[1]
+  # bigrams = bigram(t, unigram_counts)
+  # bigram_counts = bigrams[0]
+  # bigrams_2d = bigrams[1]
+  # bigram_prob = bigrams[2]
 
-  print bigram_counts
-  print bigrams_2d
-  print bigram_prob
+  # print bigram_counts
+  # print bigrams_2d
+  # print bigram_prob
+  trainModel('history')
 
 
 
