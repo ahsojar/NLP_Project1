@@ -19,6 +19,7 @@ sys.setdefaultencoding('UTF8')
 from collections import Counter
 from nltk.tokenize import word_tokenize
 
+####################################
 
 '''
 Computes the unigram model given a set of tokens.
@@ -48,6 +49,7 @@ def unigram(tokens):
 
   return [unigram_counts, unigram_prob]
 
+####################################
 
 '''
 Computes the bigram model given a set of tokens.
@@ -98,6 +100,8 @@ def bigram(tokens, unigram_counts):
 
   return [bigram_counts, bigrams_2d, bigram_prob]
 
+####################################
+
 '''
 Generates a random sentence given a probability model of words.
 
@@ -134,6 +138,8 @@ def randomSentence(model, probabilities):
   return sentence
 
 
+####################################
+
 '''
 Recomputes ngram probabilities using Good Turing smoothing.
 
@@ -165,6 +171,7 @@ def goodTuringSmoothing(ngram_counts):
 
   return goodTuring
 
+####################################
 
 '''
 Computes perpelxity for a test set against a training set unigram probability model.
@@ -192,6 +199,8 @@ def perplexityUnigrams(unigram_prob, tokens):
   perplexity = total/float(word_count)
   return perplexity
 
+####################################
+
 '''
 Computes the unigram model given a set of tokens
 Uses add-one smoothing, so also handles case of unknown words.
@@ -214,6 +223,8 @@ def addOneSmoothingUnigram(unigram_counts, tokens):
   add_one_smooth_uni['<UNK>'] = 1-cum_prob
   return add_one_smooth_uni
 
+####################################
+
 '''
 Computes the bigram model with add-one smoothing, which can now handle unseen bigrams.
 
@@ -234,6 +245,8 @@ def addOneSmoothingBigram(unigram_counts, bigrams):
       add_one_smooth_bi[first_word]['<UNK>'] = 1-cum_prob
   return add_one_smooth_bi
 
+####################################
+
 '''
 Given a genre, this function will find all test books of this genre, 
 and run them through the classifier to see if they are accurately identified
@@ -252,6 +265,8 @@ def genreClassification(true_genre):
     print genreClassifier(test_tokens, genre_models)
 
 
+####################################
+
 '''
 Given a list of tokens, will classify which genre these tokens will most likely appear in.
 
@@ -260,6 +275,7 @@ test_tokens, or list of tokens from test file
 genre_models, a list of probability models from each genre we are looking at
 Returns: classification in form of string
 '''
+
 def genreClassifier(test_tokens, genre_models):
   tokens = test_tokens
   most_common = dict(Counter(test_tokens).most_common())
@@ -276,6 +292,9 @@ def genreClassifier(test_tokens, genre_models):
       probs[genre] *= genre_models[genre][word]
   return probs
 
+###################################
+# HELPER FUNCTIONS 
+###################################
 
 def trainModel(genre):
   files = os.listdir(os.getcwd()+ '/train_books/' + genre)
@@ -308,7 +327,8 @@ def trainModel(genre):
   
   return {"unigram": unigram_prob, "bigram": bigram_prob, "addone_uni": add_one, "addone_bi": add_one_bi}
 
-###### HELPER FUNCTIONS 
+####################################
+
 '''
 Reads a list of textfiles and returns all tokens from the text.
 
@@ -335,6 +355,7 @@ def tokenizedText(files, directory):
         print filename, " did not tokenize"
   return tokens
 
+####################################
 
 '''
 Given a model type and probabilities, will calculate the cumulative probabilities. 
