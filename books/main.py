@@ -136,7 +136,6 @@ def randomSentence(model, probabilities):
             prev_word = key
   return sentence
 
-
 def goodTuringSmoothingUnigram(unigram_counts):
   goodTuring = dict()
   sample["<UNK>"] = 0
@@ -150,10 +149,10 @@ def goodTuringSmoothingUnigram(unigram_counts):
 
   return goodTuring
 
-
 def perplexityUnigrams(unigram_prob, tokens):
   total = 0
   word_count = len(tokens)
+  prev_word=tokens[0]
 
   for w in tokens:
     if w in unigram_prob:
@@ -167,31 +166,41 @@ def perplexityUnigrams(unigram_prob, tokens):
   return perplexity
 
 def addOneSmoothingUnigram(unigram_counts, tokens):
-    len_corpus = len(tokens)
-    len_vocab = len(unigram_counts)
-    cum_prob = 0
+  len_corpus = len(tokens)
+  len_vocab = len(unigram_counts)
+  cum_prob = 0
 
-    add_one_smooth_uni = {}
-    for key,value in unigram_counts.items():
-        add_one_smooth_uni[key] = float(value + 1.0) / (len_vocab+len_corpus)  
-        cum_prob += add_one_smooth_uni[key] 
-    add_one_smooth_uni['<UNK>'] = 1-cum_prob
-    return add_one_smooth_uni
+  add_one_smooth_uni = {}
+  for key,value in unigram_counts.items():
+      add_one_smooth_uni[key] = float(value + 1.0) / (len_vocab+len_corpus)  
+      cum_prob += add_one_smooth_uni[key] 
+  add_one_smooth_uni['<UNK>'] = 1-cum_prob
+  return add_one_smooth_uni
 
 def addOneSmoothingBigram(unigram_counts, bigrams):
-    vocab_length = len(unigram_counts)
+  vocab_length = len(unigram_counts)
+  add_one_smooth_bi = bigrams
+  for first_word in add_one_smooth_bi:
+      cum_prob = 0
+      for w in add_one_smooth_bi[first_word]:
+        add_one_smooth_bi[first_word][w] = float(add_one_smooth_bi[first_word][w]+1)/float(unigram_counts[first_word] + vocab_length)   
+        cum_prob += add_one_smooth_bi[first_word][w]
+      add_one_smooth_bi[first_word]['<UNK>'] = 1-cum_prob
+  return add_one_smooth_bi
 
-    add_one_smooth_bi = bigrams
-    for first_word in add_one_smooth_bi:
-        cum_prob = 0
-        for w in add_one_smooth_bi[first_word]:
-          add_one_smooth_bi[first_word][w] = float(add_one_smooth_bi[first_word][w]+1)/float(unigram_counts[first_word] + vocab_length)   
-          cum_prob += add_one_smooth_bi[first_word][w]
-        add_one_smooth_bi[first_word]['<UNK>'] = 1-cum_prob
-    return add_one_smooth_bi
+def genreClassifier(test_tokens, genre_models):
+  tokens = test_tokens
+  models = {
+  'children': genre_models['children']['addone_uni'], 
+  'history': genre_models['history']['addone_uni'], 
+  'crime': genre_models['crime']['addone_uni']
+  }
 
-def genreClassification(testfile):
-    tokens = tokenizedText(testfile)
+  children = perplexityUnigrams(models['children'], tokens)
+  history = perplexityUnigrams(models['history'], tokens)
+  crime = perplexityUnigrams(models['crime'], tokens)
+
+  return {'children': children, 'history': history, 'crime':crime}
 
 def trainModel(genre):
   files = os.listdir(os.getcwd()+ '/train_books/' + genre)
@@ -209,10 +218,38 @@ def trainModel(genre):
 
   print perplexityUnigrams(add_one, ['START', 'Alisha', 'is'] )
   print randomSentence('bigram', bigram_prob)
-  return unigram_counts
+  return {"unigram": unigram_prob, "bigram": bigram_prob, "addone_uni": add_one, "addone_bi": add_one_bi}
+
+def genreClassification(true_genre):
+  genre_models ={}
+  for genre in ['children', 'history', 'crime']:
+    genre_models[genre] = trainModel(genre)
+  
+  files = os.listdir(os.getcwd()+ '/test_books/' + true_genre)
+
+  for f in files:
+    try:
+      test_tokens = tokenizedText([f], os.getcwd()+'/test_books/'+ true_genre)
+      print genreClassifier(test_tokens, genre_models)
+    except:
+      print "couldn't tokenize"
 
 def main():
-  genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
-  trainModel(genre)
+  #genre = raw_input("Enter genre you would like to train model on (children, crime, or history): ") 
+  #genreClassification ('children')
+  t= ['START', 'hi', 'bye', 'hi', 'bye', 'END']
+  unigrams = unigram(t)
+  unigram_counts = unigrams[0]
+  unigram_prob = unigrams[1]
+  bigrams = bigram(t, unigram_counts)
+  bigram_counts = bigrams[0]
+  bigrams_2d = bigrams[1]
+  bigram_prob = bigrams[2]
+
+  print bigram_counts
+  print bigrams_2d
+  print bigram_prob
+
+
 
 main()
